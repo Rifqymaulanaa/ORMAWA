@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bigstone Riverside - Smart Sentul</title>
+    
+    <!-- Fonts: Nunito (Rounded & Friendly) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Icons: Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Custom Config for Green Palette -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        deepForest: '#1a3c34',   /* Dark Green text/bg */
+                        lushGreen: '#4e9f3d',    /* Primary Action */
+                        softSage: '#dcebe6',     /* Secondary backgrounds */
+                        riverSand: '#f4f7f2',    /* Main App Background */
+                        alertRed: '#e63946',     /* Emergency/Full Capacity */
+                        alertOrange: '#f4a261',  /* Warning */
+                        safeBlue: '#457b9d',     /* Water/Safe */
+                    },
+                    fontFamily: {
+                        sans: ['Nunito', 'sans-serif'],
+                    },
+                    borderRadius: {
+                        '4xl': '40px',
+                        '3xl': '24px',
+                    },
+                    boxShadow: {
+                        'soft': '0 20px 40px -12px rgba(26, 60, 52, 0.1)',
+                        'green-glow': '0 10px 30px -5px rgba(78, 159, 61, 0.3)',
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #f4f7f2;
+            color: #1a3c34;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Glassmorphism */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+
+        /* Water Wave Animation for IoT Sensor */
+        .wave-box {
+            position: relative;
+            overflow: hidden;
+            z-index: 0;
+        }
+        .wave {
+            position: absolute;
+            bottom: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background-color: rgba(69, 123, 157, 0.1);
+            border-radius: 40%;
+            animation: drift 10s infinite linear;
+            z-index: -1;
+        }
+        .wave.two {
+            bottom: -60%;
+            opacity: 0.6;
+            animation: drift 12s infinite linear;
+        }
+        @keyframes drift {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="overflow-x-hidden">
+
+    <!-- Mobile Container -->
+    <div id="app" class="max-w-md mx-auto min-h-screen relative pb-32 bg-riverSand transition-opacity duration-500 opacity-0">
+        
+        <!-- Header -->
+        <header class="px-6 pt-[48px] pb-4 flex justify-between items-center">
+            <div>
+                <div class="flex items-center text-lushGreen mb-1">
+                    <i class="fa-solid fa-location-dot text-xs mr-2 animate-bounce"></i>
+                    <p class="text-[12px] font-bold tracking-widest uppercase">Sentul, Bogor</p>
+                </div>
+                <h1 class="text-[28px] font-black text-deepForest leading-tight">Bigstone <br>Riverside</h1>
+            </div>
+            <div class="relative">
+                <div class="w-12 h-12 rounded-full border-2 border-white overflow-hidden shadow-soft cursor-pointer hover:scale-105 transition-transform">
+                    <img src="https://api.dicebear.com/9.x/avataaars/svg?seed=Rifqy&backgroundColor=dcebe6" alt="Profile" class="w-full h-full object-cover">
+                </div>
+                <!-- Status Badge (Online) -->
+                <div class="absolute bottom-0 right-0 w-3 h-3 bg-lushGreen rounded-full border-2 border-riverSand"></div>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="px-4 space-y-6">
+            
+            <!-- 1. LIVE STATUS & WEATHER CARD (Problem 1) -->
+            <section id="status-card" class="bg-deepForest rounded-4xl p-6 shadow-soft relative overflow-hidden text-white group cursor-pointer hover:shadow-green-glow transition-all">
+                <!-- Background Pattern -->
+                <div class="absolute top-0 right-0 w-64 h-64 bg-lushGreen opacity-10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                
+                <div class="relative z-10">
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="bg-white/10 backdrop-blur-md rounded-2xl px-3 py-1 flex items-center border border-white/10">
+                            <i class="fa-solid fa-cloud-sun text-yellow-300 mr-2"></i>
+                            <span class="text-xs font-bold">Cerah Berawan</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="block text-[10px] font-bold text-white/60 uppercase tracking-wider mb-1">Live Capacity</span>
+                            <div class="flex items-center justify-end space-x-2">
+                                <span class="w-2 h-2 bg-lushGreen rounded-full animate-pulse"></span>
+                                <span class="text-xl font-black">Tersedia</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Visual Capacity Meter -->
+                    <div class="mb-2">
+                        <div class="flex justify-between text-xs font-bold text-white/70 mb-1">
+                            <span>Pengunjung</span>
+                            <span>45/100 Slot</span>
+                        </div>
+                        <div class="w-full bg-white/10 rounded-full h-3 overflow-hidden">
+                            <div class="bg-lushGreen h-full rounded-full w-[45%] shadow-[0_0_10px_rgba(78,159,61,0.8)]"></div>
+                        </div>
+                    </div>
+
+                    <!-- Action Button -->
+                    <div class="mt-4 flex gap-3">
+                         <button class="flex-1 bg-white text-deepForest py-3 rounded-2xl text-sm font-bold shadow-lg hover:bg-gray-50 transition-colors">
+                            Booking Slot
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. UPSTREAM GUARD / IOT SENSOR (Problem 3) -->
+            <section class="glass-panel rounded-3xl p-5 wave-box border border-softSage relative">
+                <!-- Decorative Waves -->
+                <div class="wave"></div>
+                <div class="wave two"></div>
+                
+                <div class="relative z-10 flex justify-between items-center">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <div class="w-6 h-6 rounded-full bg-deepForest/10 flex items-center justify-center">
+                                <i class="fa-solid fa-shield-halved text-deepForest text-xs"></i>
+                            </div>
+                            <span class="text-[10px] font-bold text-deepForest/60 uppercase tracking-wider">Upstream Guard</span>
+                        </div>
+                        <h3 class="text-lg font-black text-deepForest">Level Air Hulu</h3>
+                        <p class="text-xs text-deepForest/70 font-semibold mt-1">
+                            <i class="fa-regular fa-clock mr-1"></i> Update: 1 min lalu
+                        </p>
+                    </div>
+
+                    <!-- Indicator -->
+                    <div class="text-center bg-white/80 backdrop-blur rounded-2xl p-3 shadow-sm border border-white/50 min-w-[100px]">
+                        <div class="text-2xl font-black text-safeBlue mb-1">40<span class="text-xs ml-1">cm</span></div>
+                        <div class="inline-block px-2 py-0.5 rounded-md bg-lushGreen/20 text-lushGreen text-[10px] font-bold uppercase">
+                            AMAN
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. QR ORDERING / KANTIN (Problem 2) -->
+            <section>
+                <div class="flex justify-between items-end mb-4 px-2">
+                    <div>
+                        <h2 class="text-xl font-black text-deepForest">Pesan Makan</h2>
+                        <p class="text-xs text-gray-500 font-bold">Langsung antar ke meja/tenda kamu</p>
+                    </div>
+                    <button class="w-8 h-8 rounded-full bg-lushGreen text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </button>
+                </div>
+
+                <!-- Horizontal Food Scroll -->
+                <div class="overflow-x-auto hide-scrollbar flex space-x-4 pb-4 snap-x">
+                    
+                    <!-- Item 1: Indomie -->
+                    <div class="snap-start shrink-0 w-40 bg-white rounded-3xl p-3 shadow-sm border border-softSage group hover:border-lushGreen transition-colors relative">
+                        <div class="h-28 bg-yellow-100 rounded-2xl mb-3 overflow-hidden relative">
+                             <!-- Placeholder Image -->
+                             <img src="https://images.unsplash.com/photo-1612929633738-8fe44f7ec841?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80" alt="Mie" class="w-full h-full object-cover">
+                             <div class="absolute top-2 right-2 bg-white rounded-full px-2 py-0.5 text-[10px] font-bold shadow-sm">Hot</div>
+                        </div>
+                        <h3 class="font-bold text-deepForest text-sm mb-1">Indomie Rebus</h3>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-extrabold text-lushGreen">Rp 12k</span>
+                            <button onclick="addToCart('Indomie Rebus', 12000)" class="w-7 h-7 bg-deepForest text-white rounded-full flex items-center justify-center hover:bg-lushGreen transition-colors">
+                                <i class="fa-solid fa-plus text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Item 2: Kopi -->
+                    <div class="snap-start shrink-0 w-40 bg-white rounded-3xl p-3 shadow-sm border border-softSage group hover:border-lushGreen transition-colors relative">
+                        <div class="h-28 bg-amber-100 rounded-2xl mb-3 overflow-hidden">
+                             <img src="https://images.unsplash.com/photo-1509042239860-f550ce710b93?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80" alt="Kopi" class="w-full h-full object-cover">
+                        </div>
+                        <h3 class="font-bold text-deepForest text-sm mb-1">Kopi Tubruk</h3>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-extrabold text-lushGreen">Rp 8k</span>
+                            <button onclick="addToCart('Kopi Tubruk', 8000)" class="w-7 h-7 bg-deepForest text-white rounded-full flex items-center justify-center hover:bg-lushGreen transition-colors">
+                                <i class="fa-solid fa-plus text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Item 3: Kelapa -->
+                    <div class="snap-start shrink-0 w-40 bg-white rounded-3xl p-3 shadow-sm border border-softSage group hover:border-lushGreen transition-colors relative">
+                        <div class="h-28 bg-green-100 rounded-2xl mb-3 overflow-hidden">
+                             <img src="https://images.unsplash.com/photo-1621262331622-c43924f78328?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80" alt="Kelapa" class="w-full h-full object-cover">
+                        </div>
+                        <h3 class="font-bold text-deepForest text-sm mb-1">Es Kelapa</h3>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-extrabold text-lushGreen">Rp 15k</span>
+                            <button onclick="addToCart('Es Kelapa', 15000)" class="w-7 h-7 bg-deepForest text-white rounded-full flex items-center justify-center hover:bg-lushGreen transition-colors">
+                                <i class="fa-solid fa-plus text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Floating Cart / Navigation -->
+        <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto z-50 px-4 pb-6 pointer-events-none">
+            
+            <!-- Cart Notification (Hidden by default) -->
+            <div id="cart-float" class="mb-4 bg-deepForest text-white rounded-3xl p-4 shadow-xl flex justify-between items-center transform translate-y-20 transition-transform duration-300 pointer-events-auto">
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mr-3 font-bold">
+                        <span id="cart-count">0</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-xs text-white/70 font-bold uppercase">Total Pesanan</span>
+                        <span class="font-bold text-lg" id="cart-total">Rp 0</span>
+                    </div>
+                </div>
+                <button onclick="checkoutWhatsApp()" class="bg-lushGreen text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-white hover:text-deepForest transition-colors flex items-center shadow-lg">
+                    Pesan via WA <i class="fa-brands fa-whatsapp ml-2 text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Bottom Nav -->
+            <div class="h-[72px] bg-white/90 backdrop-blur-lg rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.1)] flex items-center justify-between px-8 border border-white pointer-events-auto">
+                <button class="text-deepForest transition-transform active:scale-90">
+                    <i class="fa-solid fa-house text-xl"></i>
+                </button>
+                <button class="text-gray-400 hover:text-deepForest transition-colors active:scale-90 relative">
+                    <i class="fa-solid fa-ticket text-xl"></i>
+                </button>
+                
+                <!-- Center FAB (SOS / Emergency) -->
+                <button class="w-14 h-14 bg-white rounded-full border-4 border-riverSand -mt-8 flex items-center justify-center text-lushGreen shadow-lg hover:scale-110 transition-transform active:scale-90">
+                    <i class="fa-solid fa-qrcode text-2xl"></i>
+                </button>
+                
+                <button class="text-gray-400 hover:text-deepForest transition-colors active:scale-90">
+                    <i class="fa-solid fa-utensils text-xl"></i>
+                </button>
+                <button class="text-gray-400 hover:text-deepForest transition-colors active:scale-90">
+                    <i class="fa-solid fa-user text-xl"></i>
+                </button>
+            </div>
+        </nav>
+
+    </div>
+
+    <!-- Logic -->
+    <script>
+        // Fade in
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('app').classList.remove('opacity-0');
+            simulateIoTSensor();
+        });
+
+        // 1. Logic CART & WA ORDERING
+        let cartItems = [];
+        let totalAmount = 0;
+
+        function addToCart(item, price) {
+            cartItems.push({ item, price });
+            totalAmount += price;
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            const cartFloat = document.getElementById('cart-float');
+            const cartCount = document.getElementById('cart-count');
+            const cartTotal = document.getElementById('cart-total');
+
+            if (cartItems.length > 0) {
+                cartFloat.classList.remove('translate-y-20'); // Show
+            }
+
+            cartCount.innerText = cartItems.length;
+            cartTotal.innerText = 'Rp ' + totalAmount.toLocaleString('id-ID');
+        }
+
+        function checkoutWhatsApp() {
+            // Simulasi Meja (Bisa dari parameter URL di real case)
+            const tableNumber = "Meja 05 (Batu Besar)";
+            
+            let message = `Halo Kantin Bigstone, saya mau pesan untuk ${tableNumber}:%0A`;
+            
+            // Grouping items logic could go here, simply listing for now
+            cartItems.forEach(i => {
+                message += `- ${i.item}%0A`;
+            });
+            
+            message += `%0ATotal: Rp ${totalAmount.toLocaleString('id-ID')}`;
+            
+            // Open WhatsApp
+            window.open(`https://wa.me/6281234567890?text=${message}`, '_blank');
+        }
+
+        // 2. Logic IOT SIMULATION (Safety)
+        function simulateIoTSensor() {
+            const waterLevelDisplay = document.querySelector('.text-2xl.font-black.text-safeBlue');
+            
+            setInterval(() => {
+                // Fluctuate randomly between 38cm and 42cm
+                const level = Math.floor(Math.random() * (42 - 38 + 1) + 38);
+                waterLevelDisplay.innerHTML = `${level}<span class="text-xs ml-1">cm</span>`;
+                
+                // Real IoT Logic:
+                // if (level > 100) -> Trigger Alert UI
+            }, 3000);
+        }
+
+        // 3. Logic CAPACITY METER
+        // Could fetch from n8n webhook in real implementation
+    </script>
+</body>
+</html>
