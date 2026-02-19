@@ -1,34 +1,35 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Bigstone Riverside - Smart Sentul</title>
-    
+
     <!-- Fonts: Nunito (Rounded & Friendly) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-    
+
     <!-- Icons: Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Custom Config for Green Palette -->
+    <!-- Custom Config -->
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        deepForest: '#1a3c34',   /* Dark Green text/bg */
-                        lushGreen: '#4e9f3d',    /* Primary Action */
-                        softSage: '#dcebe6',     /* Secondary backgrounds */
-                        riverSand: '#f4f7f2',    /* Main App Background */
-                        alertRed: '#e63946',     /* Emergency/Full Capacity */
-                        alertOrange: '#f4a261',  /* Warning */
-                        safeBlue: '#457b9d',     /* Water/Safe */
+                        deepForest: '#1a3c34',
+                        lushGreen: '#4e9f3d',
+                        softSage: '#dcebe6',
+                        riverSand: '#f4f7f2',
+                        alertRed: '#e63946',
+                        alertOrange: '#f4a261',
+                        safeBlue: '#457b9d',
                     },
                     fontFamily: {
                         sans: ['Nunito', 'sans-serif'],
@@ -40,9 +41,22 @@
                     boxShadow: {
                         'soft': '0 20px 40px -12px rgba(26, 60, 52, 0.1)',
                         'green-glow': '0 10px 30px -5px rgba(78, 159, 61, 0.3)',
+                        'nav': '0 -10px 40px rgba(0,0,0,0.05)',
                     },
                     animation: {
                         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'flash': 'flash 1s infinite',
+                        'slide-up': 'slideUp 0.3s ease-out forwards',
+                    },
+                    keyframes: {
+                        flash: {
+                            '0%, 100%': { opacity: '1' },
+                            '50%': { opacity: '0.5' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        }
                     }
                 }
             }
@@ -53,11 +67,19 @@
         body {
             background-color: #f4f7f2;
             color: #1a3c34;
-            -webkit-font-smoothing: antialiased;
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: none;
+            /* Prevent pull-to-refresh on mobile */
         }
 
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
 
         /* Glassmorphism */
         .glass-panel {
@@ -67,12 +89,41 @@
             border: 1px solid rgba(255, 255, 255, 0.6);
         }
 
-        /* Water Wave Animation for IoT Sensor */
+        /* Emergency Mode Styles */
+        body.emergency-mode {
+            background-color: #1a0505 !important;
+        }
+
+        body.emergency-mode #app {
+            background-color: #1a0505 !important;
+        }
+
+        body.emergency-mode .glass-panel {
+            background: rgba(230, 57, 70, 0.1);
+            border-color: rgba(230, 57, 70, 0.3);
+            color: #fff;
+        }
+
+        /* View Transitions */
+        .view-section {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .view-section.active {
+            display: block;
+            opacity: 1;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        /* Custom Wave for IoT */
         .wave-box {
             position: relative;
             overflow: hidden;
             z-index: 0;
         }
+
         .wave {
             position: absolute;
             bottom: -50%;
@@ -84,229 +135,677 @@
             animation: drift 10s infinite linear;
             z-index: -1;
         }
+
         .wave.two {
             bottom: -60%;
             opacity: 0.6;
             animation: drift 12s infinite linear;
         }
+
         @keyframes drift {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Toast Notification */
+        #toast {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 50px;
+            padding: 16px;
+            position: fixed;
+            z-index: 100;
+            left: 50%;
+            bottom: 150px;
+            /* Elevated to clear bottom nav */
+            transform: translateX(-50%);
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s, bottom 0.3s;
+        }
+
+        #toast.show {
+            visibility: visible;
+            opacity: 1;
+            bottom: 160px;
         }
     </style>
 </head>
-<body class="overflow-x-hidden">
 
-    <!-- Mobile Container -->
-    <div id="app" class="max-w-md mx-auto min-h-screen relative pb-32 bg-riverSand transition-opacity duration-500 opacity-0">
-        
-        <!-- Header -->
-        <header class="px-6 pt-[48px] pb-4 flex justify-between items-center">
-            <div>
-                <div class="flex items-center text-lushGreen mb-1">
-                    <i class="fa-solid fa-location-dot text-xs mr-2 animate-bounce"></i>
-                    <p class="text-[12px] font-bold tracking-widest uppercase">Sentul, Bogor</p>
-                </div>
-                <h1 class="text-[28px] font-black text-deepForest leading-tight">Bigstone <br>Riverside</h1>
+<body class="overflow-hidden h-screen w-screen bg-gray-100">
+    <!-- Changed bg to gray-100 to show boundaries on desktop -->
+
+    <!-- Splash Screen (Simulated) -->
+    <div id="splash"
+        class="fixed inset-0 bg-deepForest z-[100] flex items-center justify-center transition-opacity duration-500">
+        <div class="text-center">
+            <div
+                class="w-20 h-20 bg-lushGreen rounded-3xl mx-auto mb-4 flex items-center justify-center shadow-green-glow animate-pulse">
+                <i class="fa-solid fa-mountain-sun text-4xl text-white"></i>
             </div>
-            <div class="relative">
-                <div class="w-12 h-12 rounded-full border-2 border-white overflow-hidden shadow-soft cursor-pointer hover:scale-105 transition-transform">
-                    <img src="https://api.dicebear.com/9.x/avataaars/svg?seed=Rifqy&backgroundColor=dcebe6" alt="Profile" class="w-full h-full object-cover">
+            <h1 class="text-2xl font-black text-white tracking-widest">BIGSTONE</h1>
+            <p class="text-xs text-white/50 uppercase tracking-[0.2em] mt-2">Smart Riverside</p>
+        </div>
+    </div>
+
+    <!-- Emergency Audio -->
+    <audio id="siren-audio" src="sirine.mp3" preload="auto" loop></audio>
+
+    <!-- Emergency Overlay (Hidden by default) -->
+    <div id="emergency-overlay"
+        class="fixed inset-0 bg-alertRed/90 z-[90] hidden flex-col items-center justify-center text-white text-center p-8 backdrop-blur-md">
+        <i class="fa-solid fa-triangle-exclamation text-6xl mb-6 animate-bounce"></i>
+        <h1 class="text-4xl font-black mb-2 uppercase">Bahaya Banjir!</h1>
+        <p class="text-lg font-bold mb-8">Air hulu naik drastis. Segera jauhi area sungai dan menuju titik kumpul.</p>
+        <div class="w-full bg-black/20 rounded-xl p-4 mb-8">
+            <p class="text-sm opacity-80 uppercase tracking-wider mb-2">Jalur Evakuasi</p>
+            <div class="flex items-center justify-center gap-2 font-black text-xl">
+                <i class="fa-solid fa-person-running"></i>
+                <span>IKUTI RAMBU HIJAU</span>
+            </div>
+        </div>
+        <button onclick="toggleEmergencyMode(false)"
+            class="bg-white text-alertRed px-8 py-3 rounded-full font-bold shadow-lg">
+            Saya Mengerti
+        </button>
+    </div>
+
+    <!-- SOS Action Sheet (Hidden by default) -->
+    <div id="sos-sheet" class="fixed inset-0 bg-black/60 z-[60] hidden items-end transition-opacity"
+        onclick="toggleSOS()">
+        <div class="bg-white w-full max-w-md mx-auto rounded-t-3xl p-6 transform transition-transform translate-y-full"
+            id="sos-content" onclick="event.stopPropagation()">
+            <div class="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-6"></div>
+            <h2 class="text-xl font-black text-deepForest mb-4">Bantuan Darurat</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <button
+                    class="bg-red-50 p-4 rounded-2xl flex flex-col items-center gap-2 border border-red-100 hover:bg-red-100 transition-colors"
+                    onclick="triggerPanic()">
+                    <div
+                        class="w-10 h-10 bg-alertRed rounded-full flex items-center justify-center text-white shadow-red-glow">
+                        <i class="fa-solid fa-bell"></i>
+                    </div>
+                    <span class="text-xs font-bold text-alertRed">Panic Button</span>
+                </button>
+                <button
+                    class="bg-blue-50 p-4 rounded-2xl flex flex-col items-center gap-2 border border-blue-100 hover:bg-blue-100 transition-colors"
+                    onclick="window.open('tel:112')">
+                    <div class="w-10 h-10 bg-safeBlue rounded-full flex items-center justify-center text-white">
+                        <i class="fa-solid fa-user-doctor"></i>
+                    </div>
+                    <span class="text-xs font-bold text-safeBlue">Medis / P3K</span>
+                </button>
+                <button
+                    class="bg-gray-50 p-4 rounded-2xl flex flex-col items-center gap-2 border border-gray-100 hover:bg-gray-100 transition-colors"
+                    onclick="laporkanPungli()">
+                    <div class="w-10 h-10 bg-deepForest rounded-full flex items-center justify-center text-white">
+                        <i class="fa-solid fa-bullhorn"></i>
+                    </div>
+                    <span class="text-xs font-bold text-deepForest">Laporkan Pungli</span>
+                </button>
+                <button
+                    class="bg-green-50 p-4 rounded-2xl flex flex-col items-center gap-2 border border-green-100 hover:bg-green-100 transition-colors"
+                    onclick="window.open('https://wa.me/6282371202688')">
+                    <div class="w-10 h-10 bg-lushGreen rounded-full flex items-center justify-center text-white">
+                        <i class="fa-brands fa-whatsapp"></i>
+                    </div>
+                    <span class="text-xs font-bold text-lushGreen">Chat Staff</span>
+                </button>
+            </div>
+            <button onclick="toggleSOS()" class="w-full mt-6 py-4 text-gray-400 font-bold text-sm">Tutup</button>
+        </div>
+    </div>
+
+    <!-- App Container -->
+    <div id="app" class="max-w-md mx-auto h-full relative bg-riverSand flex flex-col shadow-2xl">
+
+        <!-- Header (Fixed) -->
+        <header class="px-6 pt-[48px] pb-2 flex-none bg-riverSand z-10">
+            <div class="flex justify-between items-center">
+                <div>
+                    <div class="flex items-center text-lushGreen mb-1">
+                        <i class="fa-solid fa-location-dot text-xs mr-2 animate-bounce"></i>
+                        <p class="text-[10px] font-bold tracking-widest uppercase">Sentul, Bogor</p>
+                    </div>
+                    <h1 class="text-2xl font-black text-deepForest leading-none">Bigstone</h1>
                 </div>
-                <!-- Status Badge (Online) -->
-                <div class="absolute bottom-0 right-0 w-3 h-3 bg-lushGreen rounded-full border-2 border-riverSand"></div>
+                <div class="relative group">
+                    <div class="w-10 h-10 rounded-full border-2 border-white overflow-hidden shadow-soft cursor-pointer transition-transform active:scale-95"
+                        onclick="switchTab('profile-view')">
+                        <img src="https://api.dicebear.com/9.x/avataaars/svg?seed=Rifqy&backgroundColor=dcebe6"
+                            alt="Profile" class="w-full h-full object-cover">
+                    </div>
+                    <div
+                        class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-lushGreen rounded-full border-2 border-riverSand">
+                    </div>
+                </div>
             </div>
         </header>
 
-        <!-- Main Content Area -->
-        <main class="px-4 space-y-6">
-            
-            <!-- 1. LIVE STATUS & WEATHER CARD (Problem 1) -->
-            <section id="status-card" class="bg-deepForest rounded-4xl p-6 shadow-soft relative overflow-hidden text-white group cursor-pointer hover:shadow-green-glow transition-all">
-                <!-- Background Pattern -->
-                <div class="absolute top-0 right-0 w-64 h-64 bg-lushGreen opacity-10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
-                
-                <div class="relative z-10">
-                    <div class="flex justify-between items-start mb-6">
-                        <div class="bg-white/10 backdrop-blur-md rounded-2xl px-3 py-1 flex items-center border border-white/10">
-                            <i class="fa-solid fa-cloud-sun text-yellow-300 mr-2"></i>
-                            <span class="text-xs font-bold">Cerah Berawan</span>
-                        </div>
-                        <div class="text-right">
-                            <span class="block text-[10px] font-bold text-white/60 uppercase tracking-wider mb-1">Live Capacity</span>
-                            <div class="flex items-center justify-end space-x-2">
-                                <span class="w-2 h-2 bg-lushGreen rounded-full animate-pulse"></span>
-                                <span class="text-xl font-black">Tersedia</span>
+        <!-- Scrollable Content Area -->
+        <!-- Added extra pb-36 to clear both Nav and Floating Cart -->
+        <div class="flex-1 overflow-y-auto pb-36 hide-scrollbar relative">
+
+            <!-- VIEW: HOME DASHBOARD -->
+            <main id="home-view" class="view-section active px-4 space-y-5 pt-2">
+
+                <!-- Status Card -->
+                <section
+                    class="bg-deepForest rounded-4xl p-6 shadow-soft relative overflow-hidden text-white group active:scale-98 transition-transform">
+                    <div
+                        class="absolute top-0 right-0 w-64 h-64 bg-lushGreen opacity-10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2">
+                    </div>
+                    <div class="relative z-10">
+                        <div class="flex justify-between items-start mb-6">
+                            <div
+                                class="bg-white/10 backdrop-blur-md rounded-2xl px-3 py-1 flex items-center border border-white/10">
+                                <i class="fa-solid fa-cloud-sun text-yellow-300 mr-2"></i>
+                                <span class="text-xs font-bold">Cerah, 28°C</span>
+                            </div>
+                            <div class="text-right">
+                                <div class="flex items-center justify-end space-x-1.5">
+                                    <span class="w-2 h-2 bg-lushGreen rounded-full animate-pulse"></span>
+                                    <span class="text-sm font-bold opacity-80">Tersedia</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Visual Capacity Meter -->
-                    <div class="mb-2">
-                        <div class="flex justify-between text-xs font-bold text-white/70 mb-1">
-                            <span>Pengunjung</span>
-                            <span>45/100 Slot</span>
+                        <div class="mb-3">
+                            <div class="flex justify-between text-xs font-bold text-white/70 mb-1">
+                                <span>Kapasitas Area</span>
+                                <span>45%</span>
+                            </div>
+                            <div class="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                                <div
+                                    class="bg-lushGreen h-full rounded-full w-[45%] shadow-[0_0_10px_rgba(78,159,61,0.8)]">
+                                </div>
+                            </div>
                         </div>
-                        <div class="w-full bg-white/10 rounded-full h-3 overflow-hidden">
-                            <div class="bg-lushGreen h-full rounded-full w-[45%] shadow-[0_0_10px_rgba(78,159,61,0.8)]"></div>
-                        </div>
-                    </div>
-
-                    <!-- Action Button -->
-                    <div class="mt-4 flex gap-3">
-                         <button class="flex-1 bg-white text-deepForest py-3 rounded-2xl text-sm font-bold shadow-lg hover:bg-gray-50 transition-colors">
-                            Booking Slot
+                        <button onclick="switchTab('ticket-view')"
+                            class="w-full bg-white text-deepForest py-3 rounded-2xl text-sm font-bold shadow-lg active:bg-gray-100 transition-colors">
+                            Booking Slot Sekarang
                         </button>
                     </div>
-                </div>
-            </section>
+                </section>
 
-            <!-- 2. UPSTREAM GUARD / IOT SENSOR (Problem 3) -->
-            <section class="glass-panel rounded-3xl p-5 wave-box border border-softSage relative">
-                <!-- Decorative Waves -->
-                <div class="wave"></div>
-                <div class="wave two"></div>
-                
-                <div class="relative z-10 flex justify-between items-center">
-                    <div>
-                        <div class="flex items-center gap-2 mb-1">
-                            <div class="w-6 h-6 rounded-full bg-deepForest/10 flex items-center justify-center">
-                                <i class="fa-solid fa-shield-halved text-deepForest text-xs"></i>
+                <!-- IoT / Upstream Guard -->
+                <section class="glass-panel rounded-3xl p-5 wave-box border border-softSage relative overflow-hidden">
+                    <div class="wave"></div>
+                    <div class="wave two"></div>
+                    <div class="relative z-10 flex justify-between items-center">
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <i class="fa-solid fa-shield-halved text-deepForest text-xs opacity-60"></i>
+                                <span class="text-[10px] font-bold text-deepForest/60 uppercase tracking-wider">Safety
+                                    Monitor</span>
                             </div>
-                            <span class="text-[10px] font-bold text-deepForest/60 uppercase tracking-wider">Upstream Guard</span>
+                            <h3 class="text-lg font-black text-deepForest">Level Air Hulu</h3>
+                            <p class="text-[10px] text-deepForest/70 font-semibold mt-1 flex items-center">
+                                <span class="w-1.5 h-1.5 bg-lushGreen rounded-full mr-1 animate-pulse"></span>
+                                Live Sensor: Bigstone-01
+                            </p>
                         </div>
-                        <h3 class="text-lg font-black text-deepForest">Level Air Hulu</h3>
-                        <p class="text-xs text-deepForest/70 font-semibold mt-1">
-                            <i class="fa-regular fa-clock mr-1"></i> Update: 1 min lalu
-                        </p>
+                        <div
+                            class="text-center bg-white/60 backdrop-blur rounded-2xl p-2 min-w-[90px] border border-white/40">
+                            <div class="text-xl font-black text-safeBlue mb-0.5" id="water-level-display">40<span
+                                    class="text-xs ml-0.5">cm</span></div>
+                            <div id="safety-badge"
+                                class="inline-block px-2 py-0.5 rounded-md bg-lushGreen/20 text-lushGreen text-[9px] font-bold uppercase">
+                                AMAN</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Quick Menu -->
+                <section>
+                    <div class="flex justify-between items-center mb-3 px-1">
+                        <h2 class="text-lg font-black text-deepForest">Jelajahi</h2>
+                    </div>
+                    <div class="grid grid-cols-4 gap-3">
+                        <button onclick="switchTab('food-view')" class="flex flex-col items-center gap-2 group">
+                            <div
+                                class="w-16 h-16 bg-white rounded-3xl flex items-center justify-center text-lushGreen shadow-sm border border-transparent group-hover:border-lushGreen group-active:scale-95 transition-all">
+                                <i class="fa-solid fa-utensils text-xl"></i>
+                            </div>
+                            <span class="text-[11px] font-bold text-deepForest">Kantin</span>
+                        </button>
+                        <button class="flex flex-col items-center gap-2 group">
+                            <div
+                                class="w-16 h-16 bg-white rounded-3xl flex items-center justify-center text-alertOrange shadow-sm border border-transparent group-hover:border-alertOrange group-active:scale-95 transition-all">
+                                <i class="fa-solid fa-campground text-xl"></i>
+                            </div>
+                            <span class="text-[11px] font-bold text-deepForest">Camping</span>
+                        </button>
+                        <button class="flex flex-col items-center gap-2 group">
+                            <div
+                                class="w-16 h-16 bg-white rounded-3xl flex items-center justify-center text-safeBlue shadow-sm border border-transparent group-hover:border-safeBlue group-active:scale-95 transition-all">
+                                <i class="fa-solid fa-water text-xl"></i>
+                            </div>
+                            <span class="text-[11px] font-bold text-deepForest">Tubing</span>
+                        </button>
+                        <button class="flex flex-col items-center gap-2 group">
+                            <div
+                                class="w-16 h-16 bg-white rounded-3xl flex items-center justify-center text-purple-500 shadow-sm border border-transparent group-hover:border-purple-500 group-active:scale-95 transition-all">
+                                <i class="fa-solid fa-camera text-xl"></i>
+                            </div>
+                            <span class="text-[11px] font-bold text-deepForest">Spot Foto</span>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Dev Tool: Simulation -->
+                <div class="pt-6 pb-4">
+                    <p class="text-[10px] text-center text-gray-400 uppercase font-bold tracking-widest mb-2">Developer
+                        Mode</p>
+                    <button onclick="toggleEmergencyMode(true)"
+                        class="w-full border-2 border-dashed border-alertRed/30 text-alertRed py-2 rounded-xl text-xs font-bold hover:bg-alertRed/5 active:scale-98 transition-all">
+                        <i class="fa-solid fa-bug mr-2"></i>Simulasi Sensor Banjir (IoT)
+                    </button>
+                </div>
+            </main>
+
+            <!-- VIEW: FOOD / KANTIN -->
+            <main id="food-view" class="view-section px-4 pt-2">
+                <div
+                    class="bg-white rounded-3xl p-4 shadow-sm mb-6 flex items-center gap-3 sticky top-0 z-20 border border-softSage/50">
+                    <i class="fa-solid fa-magnifying-glass text-gray-400"></i>
+                    <input type="text" placeholder="Cari kopi, mie, gorengan..."
+                        class="w-full outline-none text-sm font-bold text-deepForest placeholder-gray-300">
+                </div>
+
+                <!-- Categories -->
+                <div class="flex gap-2 overflow-x-auto hide-scrollbar mb-6">
+                    <button
+                        class="bg-deepForest text-white px-5 py-2 rounded-full text-xs font-bold shadow-lg shrink-0">Semua</button>
+                    <button
+                        class="bg-white text-gray-500 px-5 py-2 rounded-full text-xs font-bold shadow-sm shrink-0">Makanan
+                        Berat</button>
+                    <button
+                        class="bg-white text-gray-500 px-5 py-2 rounded-full text-xs font-bold shadow-sm shrink-0">Snack</button>
+                    <button
+                        class="bg-white text-gray-500 px-5 py-2 rounded-full text-xs font-bold shadow-sm shrink-0">Minuman
+                        Dingin</button>
+                    <button
+                        class="bg-white text-gray-500 px-5 py-2 rounded-full text-xs font-bold shadow-sm shrink-0">Kopi</button>
+                </div>
+
+                <!-- Menu Grid -->
+                <div class="space-y-4 pb-10">
+                    <!-- Item 1 -->
+                    <div
+                        class="bg-white p-3 rounded-3xl flex gap-4 shadow-sm border border-transparent hover:border-lushGreen transition-colors group">
+                        <div class="w-24 h-24 bg-yellow-100 rounded-2xl shrink-0 overflow-hidden">
+                            <img src="https://images.unsplash.com/photo-1612929633738-8fe44f7ec841?auto=format&fit=crop&w=200&q=80"
+                                class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-1 flex flex-col justify-center">
+                            <div class="flex justify-between items-start">
+                                <h3 class="font-black text-deepForest text-base">Indomie Rebus Special</h3>
+                                <span
+                                    class="bg-orange-100 text-orange-600 text-[10px] font-bold px-2 py-0.5 rounded-full">Best
+                                    Seller</span>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-1 line-clamp-1">Telur setengah matang + Sawi + Cabe Rawit
+                            </p>
+                            <div class="flex justify-between items-end mt-3">
+                                <span class="font-black text-lushGreen">Rp 15.000</span>
+                                <button onclick="addToCart('Indomie Rebus', 15000)"
+                                    class="w-8 h-8 bg-riverSand rounded-full flex items-center justify-center text-deepForest hover:bg-deepForest hover:text-white transition-colors active:scale-90 shadow-sm">
+                                    <i class="fa-solid fa-plus text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Indicator -->
-                    <div class="text-center bg-white/80 backdrop-blur rounded-2xl p-3 shadow-sm border border-white/50 min-w-[100px]">
-                        <div class="text-2xl font-black text-safeBlue mb-1">40<span class="text-xs ml-1">cm</span></div>
-                        <div class="inline-block px-2 py-0.5 rounded-md bg-lushGreen/20 text-lushGreen text-[10px] font-bold uppercase">
-                            AMAN
+                    <!-- Item 2 -->
+                    <div
+                        class="bg-white p-3 rounded-3xl flex gap-4 shadow-sm border border-transparent hover:border-lushGreen transition-colors group">
+                        <div class="w-24 h-24 bg-amber-100 rounded-2xl shrink-0 overflow-hidden">
+                            <img src="https://images.unsplash.com/photo-1541167760496-1628856ab772?auto=format&fit=crop&w=200&q=80"
+                                class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-1 flex flex-col justify-center">
+                            <h3 class="font-black text-deepForest text-base">Kopi Susu Gula Aren</h3>
+                            <p class="text-xs text-gray-400 mt-1 line-clamp-1">Robusta Bogor + Fresh Milk + Aren asli
+                            </p>
+                            <div class="flex justify-between items-end mt-3">
+                                <span class="font-black text-lushGreen">Rp 18.000</span>
+                                <button onclick="addToCart('Kopi Susu Aren', 18000)"
+                                    class="w-8 h-8 bg-riverSand rounded-full flex items-center justify-center text-deepForest hover:bg-deepForest hover:text-white transition-colors active:scale-90 shadow-sm">
+                                    <i class="fa-solid fa-plus text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Item 3 -->
+                    <div
+                        class="bg-white p-3 rounded-3xl flex gap-4 shadow-sm border border-transparent hover:border-lushGreen transition-colors group">
+                        <div class="w-24 h-24 bg-red-100 rounded-2xl shrink-0 overflow-hidden">
+                            <img src="https://images.unsplash.com/photo-1576485290814-1c72aa4bbb8e?auto=format&fit=crop&w=200&q=80"
+                                class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-1 flex flex-col justify-center">
+                            <h3 class="font-black text-deepForest text-base">Pisang Goreng Keju</h3>
+                            <p class="text-xs text-gray-400 mt-1 line-clamp-1">Pisang tanduk manis + Keju melimpah</p>
+                            <div class="flex justify-between items-end mt-3">
+                                <span class="font-black text-lushGreen">Rp 20.000</span>
+                                <button onclick="addToCart('Pisang Goreng Keju', 20000)"
+                                    class="w-8 h-8 bg-riverSand rounded-full flex items-center justify-center text-deepForest hover:bg-deepForest hover:text-white transition-colors active:scale-90 shadow-sm">
+                                    <i class="fa-solid fa-plus text-xs"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </section>
+            </main>
 
-            <!-- 3. QR ORDERING / KANTIN (Problem 2) -->
-            <section>
-                <div class="flex justify-between items-end mb-4 px-2">
+            <!-- VIEW: TICKET / BOOKING -->
+            <main id="ticket-view" class="view-section px-4 pt-2">
+                <h2 class="text-2xl font-black text-deepForest mb-6">Booking Slot</h2>
+
+                <!-- Date Picker -->
+                <div class="bg-white rounded-3xl p-5 shadow-sm mb-4">
+                    <label class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 block">Pilih
+                        Tanggal</label>
+                    <div id="date-picker" class="flex justify-between items-center text-center"></div>
+                </div>
+
+                <!-- Pax Counter -->
+                <div class="bg-white rounded-3xl p-5 shadow-sm mb-4 flex justify-between items-center">
                     <div>
-                        <h2 class="text-xl font-black text-deepForest">Pesan Makan</h2>
-                        <p class="text-xs text-gray-500 font-bold">Langsung antar ke meja/tenda kamu</p>
+                        <h3 class="font-black text-deepForest">Jumlah Orang</h3>
+                        <p class="text-xs text-gray-400">Rp 25.000 / orang</p>
                     </div>
-                    <button class="w-8 h-8 rounded-full bg-lushGreen text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
-                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    <div class="flex items-center gap-4 bg-riverSand rounded-full p-1.5">
+                        <button onclick="changePax(-1)"
+                            class="w-8 h-8 rounded-full bg-white shadow-sm text-deepForest font-black active:scale-90 transition-transform">-</button>
+                        <span id="pax-count" class="font-black text-lg w-4 text-center">2</span>
+                        <button onclick="changePax(1)"
+                            class="w-8 h-8 rounded-full bg-deepForest shadow-sm text-white font-black active:scale-90 transition-transform">+</button>
+                    </div>
+                </div>
+
+                <!-- Summary -->
+                <div class="border-t-2 border-dashed border-gray-200 py-6">
+                    <div class="flex justify-between mb-2">
+                        <span class="text-sm font-bold text-gray-500">Subtotal</span>
+                        <span id="ticket-subtotal" class="text-sm font-bold text-deepForest">Rp 50.000</span>
+                    </div>
+                    <div class="flex justify-between mb-2">
+                        <span class="text-sm font-bold text-gray-500">Biaya Layanan</span>
+                        <span class="text-sm font-bold text-deepForest">Rp 2.000</span>
+                    </div>
+                    <div class="flex justify-between mt-4">
+                        <span class="text-lg font-black text-deepForest">Total</span>
+                        <span id="ticket-total" class="text-xl font-black text-lushGreen">Rp 52.000</span>
+                    </div>
+                </div>
+
+                <button onclick="bookingWhatsApp()"
+                    class="w-full bg-deepForest text-white py-4 rounded-3xl font-black shadow-lg hover:bg-opacity-90 active:scale-98 transition-all flex justify-center items-center gap-3">
+                    Lanjut Pembayaran <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </main>
+
+            <!-- VIEW: PROFILE -->
+            <main id="profile-view" class="view-section px-4 pt-2 text-center">
+                <div class="w-24 h-24 rounded-full border-4 border-white shadow-lg mx-auto mb-4 overflow-hidden">
+                    <img src="https://api.dicebear.com/9.x/avataaars/svg?seed=Rifqy&backgroundColor=dcebe6"
+                        class="w-full h-full object-cover">
+                </div>
+                <h2 class="text-2xl font-black text-deepForest">Rifqy Maulana</h2>
+                <p class="text-sm text-gray-500 font-bold mb-6">Member sejak 2023</p>
+
+                <div class="bg-white rounded-3xl p-2 shadow-sm text-left space-y-1">
+                    <button
+                        class="w-full p-4 flex justify-between items-center hover:bg-riverSand rounded-2xl transition-colors">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                                <i class="fa-solid fa-ticket"></i></div>
+                            <span class="font-bold text-deepForest">Tiket Saya</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-xs text-gray-300"></i>
+                    </button>
+                    <button
+                        class="w-full p-4 flex justify-between items-center hover:bg-riverSand rounded-2xl transition-colors">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="w-8 h-8 rounded-full bg-green-100 text-lushGreen flex items-center justify-center">
+                                <i class="fa-solid fa-clock-rotate-left"></i></div>
+                            <span class="font-bold text-deepForest">Riwayat Pesanan</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-xs text-gray-300"></i>
+                    </button>
+                    <button
+                        class="w-full p-4 flex justify-between items-center hover:bg-riverSand rounded-2xl transition-colors">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-red-100 text-alertRed flex items-center justify-center">
+                                <i class="fa-solid fa-right-from-bracket"></i></div>
+                            <span class="font-bold text-alertRed">Keluar</span>
+                        </div>
                     </button>
                 </div>
 
-                <!-- Horizontal Food Scroll -->
-                <div class="overflow-x-auto hide-scrollbar flex space-x-4 pb-4 snap-x">
-                    
-                    <!-- Item 1: Indomie -->
-                    <div class="snap-start shrink-0 w-40 bg-white rounded-3xl p-3 shadow-sm border border-softSage group hover:border-lushGreen transition-colors relative">
-                        <div class="h-28 bg-yellow-100 rounded-2xl mb-3 overflow-hidden relative">
-                             <!-- Placeholder Image -->
-                             <img src="https://images.unsplash.com/photo-1612929633738-8fe44f7ec841?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80" alt="Mie" class="w-full h-full object-cover">
-                             <div class="absolute top-2 right-2 bg-white rounded-full px-2 py-0.5 text-[10px] font-bold shadow-sm">Hot</div>
+                <p class="mt-8 text-[10px] text-gray-400 font-bold uppercase tracking-widest">Versi Aplikasi 2.1.0</p>
+            </main>
+        </div>
+
+        <!-- Floating Cart (Global) -->
+        <!-- Fixed: Added max-w-md, mx-auto, and increased bottom spacing to avoid overlapping nav -->
+        <div id="cart-float"
+            class="fixed bottom-32 left-0 right-0 mx-auto max-w-md px-4 z-40 transform translate-y-full opacity-0 transition-all duration-300 pointer-events-none">
+            <div
+                class="bg-deepForest text-white rounded-3xl p-4 shadow-2xl backdrop-blur-md bg-opacity-95 pointer-events-auto border border-white/10">
+                <!-- Cart Item List -->
+                <div id="cart-items-list" class="space-y-2 mb-3 max-h-40 overflow-y-auto hide-scrollbar"></div>
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center">
+                        <div
+                            class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mr-3 font-bold animate-bounce">
+                            <span id="cart-count">0</span>
                         </div>
-                        <h3 class="font-bold text-deepForest text-sm mb-1">Indomie Rebus</h3>
-                        <div class="flex justify-between items-center">
-                            <span class="text-xs font-extrabold text-lushGreen">Rp 12k</span>
-                            <button onclick="addToCart('Indomie Rebus', 12000)" class="w-7 h-7 bg-deepForest text-white rounded-full flex items-center justify-center hover:bg-lushGreen transition-colors">
-                                <i class="fa-solid fa-plus text-xs"></i>
-                            </button>
+                        <div class="flex flex-col">
+                            <span class="text-[10px] text-white/70 font-bold uppercase tracking-wider">Total
+                                Pesanan</span>
+                            <span class="font-black text-lg leading-none" id="cart-total">Rp 0</span>
                         </div>
                     </div>
-
-                    <!-- Item 2: Kopi -->
-                    <div class="snap-start shrink-0 w-40 bg-white rounded-3xl p-3 shadow-sm border border-softSage group hover:border-lushGreen transition-colors relative">
-                        <div class="h-28 bg-amber-100 rounded-2xl mb-3 overflow-hidden">
-                             <img src="https://images.unsplash.com/photo-1509042239860-f550ce710b93?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80" alt="Kopi" class="w-full h-full object-cover">
-                        </div>
-                        <h3 class="font-bold text-deepForest text-sm mb-1">Kopi Tubruk</h3>
-                        <div class="flex justify-between items-center">
-                            <span class="text-xs font-extrabold text-lushGreen">Rp 8k</span>
-                            <button onclick="addToCart('Kopi Tubruk', 8000)" class="w-7 h-7 bg-deepForest text-white rounded-full flex items-center justify-center hover:bg-lushGreen transition-colors">
-                                <i class="fa-solid fa-plus text-xs"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Item 3: Kelapa -->
-                    <div class="snap-start shrink-0 w-40 bg-white rounded-3xl p-3 shadow-sm border border-softSage group hover:border-lushGreen transition-colors relative">
-                        <div class="h-28 bg-green-100 rounded-2xl mb-3 overflow-hidden">
-                             <img src="https://images.unsplash.com/photo-1621262331622-c43924f78328?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80" alt="Kelapa" class="w-full h-full object-cover">
-                        </div>
-                        <h3 class="font-bold text-deepForest text-sm mb-1">Es Kelapa</h3>
-                        <div class="flex justify-between items-center">
-                            <span class="text-xs font-extrabold text-lushGreen">Rp 15k</span>
-                            <button onclick="addToCart('Es Kelapa', 15000)" class="w-7 h-7 bg-deepForest text-white rounded-full flex items-center justify-center hover:bg-lushGreen transition-colors">
-                                <i class="fa-solid fa-plus text-xs"></i>
-                            </button>
-                        </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="clearCart()"
+                            class="bg-white/10 text-white/70 px-3 py-2.5 rounded-xl font-bold text-sm hover:bg-alertRed hover:text-white transition-colors flex items-center active:scale-95"
+                            title="Hapus Semua">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
+                        </button>
+                        <button onclick="checkoutWhatsApp()"
+                            class="bg-lushGreen text-white px-5 py-2.5 rounded-xl font-bold text-sm hover:bg-white hover:text-deepForest transition-colors flex items-center shadow-lg active:scale-95">
+                            Pesan <i class="fa-brands fa-whatsapp ml-2"></i>
+                        </button>
                     </div>
                 </div>
-            </section>
-
-        </main>
-
-        <!-- Floating Cart / Navigation -->
-        <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto z-50 px-4 pb-6 pointer-events-none">
-            
-            <!-- Cart Notification (Hidden by default) -->
-            <div id="cart-float" class="mb-4 bg-deepForest text-white rounded-3xl p-4 shadow-xl flex justify-between items-center transform translate-y-20 transition-transform duration-300 pointer-events-auto">
-                <div class="flex items-center">
-                    <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mr-3 font-bold">
-                        <span id="cart-count">0</span>
-                    </div>
-                    <div class="flex flex-col">
-                        <span class="text-xs text-white/70 font-bold uppercase">Total Pesanan</span>
-                        <span class="font-bold text-lg" id="cart-total">Rp 0</span>
-                    </div>
-                </div>
-                <button onclick="checkoutWhatsApp()" class="bg-lushGreen text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-white hover:text-deepForest transition-colors flex items-center shadow-lg">
-                    Pesan via WA <i class="fa-brands fa-whatsapp ml-2 text-lg"></i>
-                </button>
             </div>
+        </div>
 
-            <!-- Bottom Nav -->
-            <div class="h-[72px] bg-white/90 backdrop-blur-lg rounded-full shadow-[0_10px_30px_rgba(0,0,0,0.1)] flex items-center justify-between px-8 border border-white pointer-events-auto">
-                <button class="text-deepForest transition-transform active:scale-90">
-                    <i class="fa-solid fa-house text-xl"></i>
+        <!-- Bottom Navigation Wrapper -->
+        <!-- Fixed: Added wrapper with max-w-md to center the fixed nav on desktop -->
+        <div class="fixed bottom-6 left-0 right-0 mx-auto max-w-md px-6 z-50 pointer-events-none">
+            <nav
+                class="h-[72px] bg-white/90 backdrop-blur-xl rounded-full shadow-nav flex items-center justify-between px-2 border border-white/50 pointer-events-auto">
+                <button onclick="switchTab('home-view')"
+                    class="nav-btn w-14 h-full flex flex-col items-center justify-center text-deepForest transition-all active:scale-90"
+                    data-target="home-view">
+                    <i class="fa-solid fa-house text-xl mb-1"></i>
+                    <span class="text-[9px] font-bold">Home</span>
                 </button>
-                <button class="text-gray-400 hover:text-deepForest transition-colors active:scale-90 relative">
-                    <i class="fa-solid fa-ticket text-xl"></i>
+                <button onclick="switchTab('ticket-view')"
+                    class="nav-btn w-14 h-full flex flex-col items-center justify-center text-gray-400 hover:text-deepForest transition-all active:scale-90"
+                    data-target="ticket-view">
+                    <i class="fa-solid fa-ticket text-xl mb-1"></i>
+                    <span class="text-[9px] font-bold">Tiket</span>
                 </button>
-                
-                <!-- Center FAB (SOS / Emergency) -->
-                <button class="w-14 h-14 bg-white rounded-full border-4 border-riverSand -mt-8 flex items-center justify-center text-lushGreen shadow-lg hover:scale-110 transition-transform active:scale-90">
-                    <i class="fa-solid fa-qrcode text-2xl"></i>
+
+                <!-- Center SOS Button -->
+                <button onclick="toggleSOS()"
+                    class="w-16 h-16 bg-riverSand rounded-full border-[6px] border-riverSand -mt-10 flex items-center justify-center text-lushGreen shadow-lg hover:scale-105 transition-transform active:scale-95 relative group z-10">
+                    <div
+                        class="w-full h-full bg-white rounded-full flex items-center justify-center relative overflow-hidden">
+                        <i
+                            class="fa-solid fa-circle-plus text-3xl group-hover:rotate-90 transition-transform duration-300"></i>
+                    </div>
                 </button>
-                
-                <button class="text-gray-400 hover:text-deepForest transition-colors active:scale-90">
-                    <i class="fa-solid fa-utensils text-xl"></i>
+
+                <button onclick="switchTab('food-view')"
+                    class="nav-btn w-14 h-full flex flex-col items-center justify-center text-gray-400 hover:text-deepForest transition-all active:scale-90"
+                    data-target="food-view">
+                    <i class="fa-solid fa-utensils text-xl mb-1"></i>
+                    <span class="text-[9px] font-bold">Menu</span>
                 </button>
-                <button class="text-gray-400 hover:text-deepForest transition-colors active:scale-90">
-                    <i class="fa-solid fa-user text-xl"></i>
+                <button onclick="switchTab('profile-view')"
+                    class="nav-btn w-14 h-full flex flex-col items-center justify-center text-gray-400 hover:text-deepForest transition-all active:scale-90"
+                    data-target="profile-view">
+                    <i class="fa-solid fa-user text-xl mb-1"></i>
+                    <span class="text-[9px] font-bold">Profil</span>
                 </button>
-            </div>
-        </nav>
+            </nav>
+        </div>
+
+        <!-- Toast -->
+        <div id="toast">Pesanan ditambahkan ke keranjang</div>
 
     </div>
 
-    <!-- Logic -->
+    <!-- Application Logic -->
     <script>
-        // Fade in
+        // --- Global State ---
+        const WA_NUMBER = '6282371202688';
+        const PRICE_PER_PAX = 25000;
+        const SERVICE_FEE = 2000;
+        let paxCount = 2;
+        let selectedDateIndex = 0; // 0 = today
+
+        // --- Initialization ---
         document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('app').classList.remove('opacity-0');
+            // Splash Screen Logic
+            setTimeout(() => {
+                document.getElementById('splash').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('splash').style.display = 'none';
+                }, 500);
+            }, 1500);
+
             simulateIoTSensor();
+            renderDatePicker();
+            updateTicketSummary();
         });
 
-        // 1. Logic CART & WA ORDERING
+        // --- Navigation Logic ---
+        function switchTab(tabId) {
+            document.querySelectorAll('.view-section').forEach(el => {
+                el.classList.remove('active');
+            });
+            document.getElementById(tabId).classList.add('active');
+
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                if (btn.dataset.target === tabId) {
+                    btn.classList.remove('text-gray-400');
+                    btn.classList.add('text-deepForest');
+                } else {
+                    btn.classList.add('text-gray-400');
+                    btn.classList.remove('text-deepForest');
+                }
+            });
+
+            document.querySelector('.overflow-y-auto').scrollTop = 0;
+        }
+
+        // --- Date Picker Logic ---
+        function renderDatePicker() {
+            const container = document.getElementById('date-picker');
+            if (!container) return;
+            const dayNames = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+            const today = new Date();
+            container.innerHTML = '';
+
+            for (let i = -1; i <= 2; i++) {
+                const d = new Date(today);
+                d.setDate(today.getDate() + i);
+                const dayName = dayNames[d.getDay()];
+                const dateNum = d.getDate();
+                const isSelected = (i === selectedDateIndex);
+                const isToday = (i === 0);
+
+                let classes, innerClasses;
+                if (isSelected) {
+                    classes = 'p-4 rounded-2xl bg-deepForest text-white shadow-lg transform scale-105 border-2 border-lushGreen relative cursor-pointer transition-all';
+                    innerClasses = { day: 'text-[10px] font-bold uppercase text-lushGreen', num: 'text-xl font-black' };
+                } else if (i < 0) {
+                    classes = 'p-3 rounded-2xl bg-riverSand text-gray-400 scale-90 opacity-60 cursor-not-allowed transition-all';
+                    innerClasses = { day: 'text-[10px] font-bold uppercase', num: 'text-lg font-black' };
+                } else {
+                    classes = 'p-3 rounded-2xl bg-riverSand text-deepForest hover:bg-white border border-transparent hover:border-softSage transition-all cursor-pointer';
+                    innerClasses = { day: 'text-[10px] font-bold uppercase', num: 'text-lg font-black' };
+                }
+
+                const div = document.createElement('div');
+                div.className = classes;
+                let todayBadge = '';
+                if (isToday && isSelected) {
+                    todayBadge = '<div class="absolute -top-2 -right-2 bg-lushGreen text-[8px] font-bold px-2 py-0.5 rounded-full">HARI INI</div>';
+                }
+                div.innerHTML = `${todayBadge}<div class="${innerClasses.day}">${dayName}</div><div class="${innerClasses.num}">${dateNum}</div>`;
+
+                if (i >= 0) {
+                    const idx = i;
+                    div.addEventListener('click', () => {
+                        selectedDateIndex = idx;
+                        renderDatePicker();
+                    });
+                }
+                container.appendChild(div);
+            }
+        }
+
+        // --- Ticket Pax Counter ---
+        function changePax(delta) {
+            paxCount = Math.max(1, Math.min(20, paxCount + delta));
+            document.getElementById('pax-count').innerText = paxCount;
+            updateTicketSummary();
+            if (navigator.vibrate) navigator.vibrate(30);
+        }
+
+        function updateTicketSummary() {
+            const subtotal = paxCount * PRICE_PER_PAX;
+            const total = subtotal + SERVICE_FEE;
+            document.getElementById('ticket-subtotal').innerText = 'Rp ' + subtotal.toLocaleString('id-ID');
+            document.getElementById('ticket-total').innerText = 'Rp ' + total.toLocaleString('id-ID');
+        }
+
+        function bookingWhatsApp() {
+            const today = new Date();
+            const selDate = new Date(today);
+            selDate.setDate(today.getDate() + selectedDateIndex);
+            const dateStr = selDate.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            const subtotal = paxCount * PRICE_PER_PAX;
+            const total = subtotal + SERVICE_FEE;
+
+            let message = `Halo Bigstone Riverside, saya mau booking:%0A`;
+            message += `Tanggal: ${dateStr}%0A`;
+            message += `Jumlah: ${paxCount} orang%0A`;
+            message += `Subtotal: Rp ${subtotal.toLocaleString('id-ID')}%0A`;
+            message += `Biaya Layanan: Rp ${SERVICE_FEE.toLocaleString('id-ID')}%0A`;
+            message += `Total: Rp ${total.toLocaleString('id-ID')}`;
+            window.open(`https://wa.me/${WA_NUMBER}?text=${message}`, '_blank');
+        }
+
+        // --- Cart Logic ---
         let cartItems = [];
         let totalAmount = 0;
 
@@ -314,54 +813,164 @@
             cartItems.push({ item, price });
             totalAmount += price;
             updateCartUI();
+            showToast(`+1 ${item}`);
+            if (navigator.vibrate) navigator.vibrate(50);
+        }
+
+        function removeFromCart(index) {
+            const removed = cartItems.splice(index, 1)[0];
+            if (removed) {
+                totalAmount -= removed.price;
+                updateCartUI();
+                showToast(`-1 ${removed.item}`);
+                if (navigator.vibrate) navigator.vibrate(30);
+            }
+        }
+
+        function clearCart() {
+            cartItems = [];
+            totalAmount = 0;
+            updateCartUI();
+            showToast('Keranjang dikosongkan');
         }
 
         function updateCartUI() {
             const cartFloat = document.getElementById('cart-float');
             const cartCount = document.getElementById('cart-count');
             const cartTotal = document.getElementById('cart-total');
+            const cartList = document.getElementById('cart-items-list');
 
             if (cartItems.length > 0) {
-                cartFloat.classList.remove('translate-y-20'); // Show
+                cartFloat.classList.remove('translate-y-full');
+                cartFloat.classList.remove('opacity-0');
+            } else {
+                cartFloat.classList.add('translate-y-full');
+                cartFloat.classList.add('opacity-0');
             }
 
             cartCount.innerText = cartItems.length;
             cartTotal.innerText = 'Rp ' + totalAmount.toLocaleString('id-ID');
+
+            // Render cart items with cancel buttons
+            const counts = {};
+            const firstIndex = {};
+            cartItems.forEach((x, i) => {
+                if (!counts[x.item]) {
+                    counts[x.item] = { count: 0, price: x.price, indices: [] };
+                }
+                counts[x.item].count++;
+                counts[x.item].indices.push(i);
+            });
+
+            cartList.innerHTML = '';
+            for (const [item, data] of Object.entries(counts)) {
+                const lastIdx = data.indices[data.indices.length - 1];
+                cartList.innerHTML += `
+                    <div class="flex justify-between items-center bg-white/10 rounded-xl px-3 py-2">
+                        <div class="flex-1">
+                            <span class="text-xs font-bold">${item}</span>
+                            <span class="text-[10px] text-white/50 ml-1">x${data.count}</span>
+                        </div>
+                        <span class="text-xs font-bold text-white/70 mr-3">Rp ${(data.price * data.count).toLocaleString('id-ID')}</span>
+                        <button onclick="removeFromCart(${lastIdx})" class="w-6 h-6 bg-alertRed/20 hover:bg-alertRed rounded-full flex items-center justify-center transition-colors active:scale-90">
+                            <i class="fa-solid fa-minus text-[8px] text-white"></i>
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 2000);
         }
 
         function checkoutWhatsApp() {
-            // Simulasi Meja (Bisa dari parameter URL di real case)
             const tableNumber = "Meja 05 (Batu Besar)";
-            
             let message = `Halo Kantin Bigstone, saya mau pesan untuk ${tableNumber}:%0A`;
-            
-            // Grouping items logic could go here, simply listing for now
-            cartItems.forEach(i => {
-                message += `- ${i.item}%0A`;
-            });
-            
+            const counts = {};
+            cartItems.forEach(x => { counts[x.item] = (counts[x.item] || 0) + 1; });
+            for (const [item, count] of Object.entries(counts)) {
+                message += `- ${item} (${count}x)%0A`;
+            }
             message += `%0ATotal: Rp ${totalAmount.toLocaleString('id-ID')}`;
-            
-            // Open WhatsApp
-            window.open(`https://wa.me/6281234567890?text=${message}`, '_blank');
+            window.open(`https://wa.me/${WA_NUMBER}?text=${message}`, '_blank');
         }
 
-        // 2. Logic IOT SIMULATION (Safety)
+        // --- SOS & Emergency Logic ---
+        function toggleSOS() {
+            const sheet = document.getElementById('sos-sheet');
+            const content = document.getElementById('sos-content');
+
+            if (sheet.classList.contains('hidden')) {
+                sheet.classList.remove('hidden');
+                sheet.classList.add('flex');
+                setTimeout(() => content.classList.remove('translate-y-full'), 10);
+            } else {
+                content.classList.add('translate-y-full');
+                setTimeout(() => {
+                    sheet.classList.add('hidden');
+                    sheet.classList.remove('flex');
+                }, 300);
+            }
+        }
+
+        function toggleEmergencyMode(forceOn = false) {
+            const overlay = document.getElementById('emergency-overlay');
+            const body = document.body;
+            const siren = document.getElementById('siren-audio');
+
+            if (forceOn) {
+                overlay.classList.remove('hidden');
+                overlay.classList.add('flex');
+                body.classList.add('emergency-mode');
+                // Play siren sound on loop
+                if (siren) {
+                    siren.currentTime = 0;
+                    siren.loop = true;
+                    siren.play().catch(() => { });
+                }
+            } else {
+                overlay.classList.add('hidden');
+                overlay.classList.remove('flex');
+                body.classList.remove('emergency-mode');
+                // Stop siren sound
+                if (siren) {
+                    siren.pause();
+                    siren.currentTime = 0;
+                }
+            }
+        }
+
+        function triggerPanic() {
+            let message = `🚨 PANIC BUTTON DITEKAN!%0A%0ALokasi: Bigstone Riverside, Sentul%0AWaktu: ${new Date().toLocaleString('id-ID')}%0AStatus: DARURAT - Butuh bantuan segera!`;
+            window.open(`https://wa.me/${WA_NUMBER}?text=${message}`, '_blank');
+            toggleSOS();
+        }
+
+        function laporkanPungli() {
+            let message = `⚠️ LAPORAN PUNGLI%0A%0ALokasi: Bigstone Riverside, Sentul%0AWaktu: ${new Date().toLocaleString('id-ID')}%0A%0ADetail Laporan:%0A(Silakan jelaskan kronologi kejadian di sini)`;
+            window.open(`https://wa.me/${WA_NUMBER}?text=${message}`, '_blank');
+            toggleSOS();
+        }
+
+        // --- IoT Simulation ---
         function simulateIoTSensor() {
-            const waterLevelDisplay = document.querySelector('.text-2xl.font-black.text-safeBlue');
-            
+            const waterLevelDisplay = document.getElementById('water-level-display');
+            const safetyBadge = document.getElementById('safety-badge');
+
             setInterval(() => {
-                // Fluctuate randomly between 38cm and 42cm
-                const level = Math.floor(Math.random() * (42 - 38 + 1) + 38);
-                waterLevelDisplay.innerHTML = `${level}<span class="text-xs ml-1">cm</span>`;
-                
-                // Real IoT Logic:
-                // if (level > 100) -> Trigger Alert UI
+                const level = Math.floor(Math.random() * (45 - 38 + 1) + 38);
+                if (waterLevelDisplay) waterLevelDisplay.innerHTML = `${level}<span class="text-xs ml-0.5">cm</span>`;
+
+                if (level > 100) {
+                    toggleEmergencyMode(true);
+                }
             }, 3000);
         }
-
-        // 3. Logic CAPACITY METER
-        // Could fetch from n8n webhook in real implementation
     </script>
 </body>
+
 </html>
